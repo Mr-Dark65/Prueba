@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+</head>
+<body>
+    
+    <script>
+        //Estado 200 cuando se ejecuto el servicio
+        //404 cuando no encontro el servicio
+        //500 cuando existe falla del servicio
+        //4 y 200 la operacion se ha ejectudo correctamente
+        
+        //var xhttp = new XMLHttpRequest();
+       // xhttp.open("GET", "miJson.json");
+        //xhttp.send();
+        
+       // xhttp.onreadystatechange = function(){
+
+         //   if(xhttp.readyState == 4 && xhttp.status == 200){
+           //     console.log("el valor de la propiedad Statues es: "+xhttp.status);
+             //   console.log("el valor de la propiedad ReadyState es: "+xhttp.readyState);
+               // console.log("El texto es: "+xhttp.responseText);
+                //var object = JSON.parse(xhttp.responseText);
+                //console.log(object);
+               // console.log(object.nombre);
+
+           // }
+        //}
+
+        fetch("miJson.json")
+            .then(response=>response.json())
+            .then(data=>{
+                console.log(data);
+            });
+        
+        $.ajax({
+            url: "miJson.json",
+            type: "GET",
+            dateType: "json",
+            success:function(jsonData){
+                console.log(jsonData);
+            },
+            error:function(error){
+                console.log("Error al leer el json",error);
+            }
+        });
+
+        //await
+        async function cargar(){
+            try{
+                let response = await fetch("miJson.json");
+                var data = await response.json();
+                console.log(data);
+            }catch(error){
+                console.log("Error al leer el json",error);
+            }
+        }
+
+        cargar();
+
+
+
+    </script>
+</body>
+</html>

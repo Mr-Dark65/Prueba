@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+
+    <div class="response">
+        <h1>Filtrar por Sipnosis</h1>
+      <input type="text" id="filtro1" placeholder="Palabra 1"/>
+      <input type="text2" id="filtro2" placeholder="Palabra 2"/>
+      <button class="boton" id="boton">Filtrar</button>
+    </div>
+
+    <ul id="peliculas"></ul>
+
+    <div class="response2">
+        <h1>Filtrar por Actor</h1>
+        <input type="text" id="actorInput" placeholder="Nombre del Actor...">
+        <button class="boton" id="searchButton">Buscar Películas</button>
+    </div>
+    <ul id="actorMoviesList"></ul>
+
+    <div class="response3">
+        <h1>Puntuacion</h1>
+        <input type="date" id="startDate" placeholder="Fecha de Inicio">
+        <input type="date" id="endDate" placeholder="Fecha de Fin">
+        <button class="boton" id="searchMoviesButton">Buscar Películas</button>
+    </div>
+    <ul id="topMoviesList"></ul>
+    
+
+    <script>
+      //lista de titulos, año y duracion de peliculas
+      const lista = async () => {
+        const res = await fetch("movies.json");
+        const data = await res.json();
+        return data; 
+      };
+
+      const peliculasLista = async() =>{
+        const data = await lista();
+        const moviesArray = data.map(movie => {
+            return {
+                title: movie.title,
+                year: movie.year,
+                duration: movie.duration
+            };
+        });
+        console.log(moviesArray);
+      };
+
+      peliculasLista();
+
+      // Contar información de los actores
+      const contador = async () => {
+        const data = await lista(); 
+        data.forEach((movie) => {
+          const title = movie.title;
+          const actorCount = movie.actors ? movie.actors.length : 0; // Contar actores
+          console.log(`Título: ${title}, Número de Actores: ${actorCount}`);
+        });
+      };
+
+      // Filtrar películas por sinopsis
+      const filtrarPeliculasPorSinopsis = (peliculas, palabra1, palabra2) => {
+        return peliculas.filter((movie) => {
+          const storyline = movie.storyline.toLowerCase();
+          return (
+            storyline.includes(palabra1.toLowerCase()) &&
+            storyline.includes(palabra2.toLowerCase())
+          );
+        });
+      };
+
+      // Manejar el evento de filtrado
+      document.getElementById("boton").addEventListener("click", async () => {
+        const movies = await lista();
+        const palabra1 = document.getElementById("filtro1").value;
+        const palabra2 = document.getElementById("filtro2").value;
+
+        const filtrar = filtrarPeliculasPorSinopsis(movies, palabra1, palabra2);
+
+        const listaPelis = document.getElementById("peliculas"); 
+        listaPelis.innerHTML = ""; 
+
+        filtrar.forEach((movie) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = movie.title; // Mostrar solo el título
+          listaPelis.appendChild(listItem);
+        });
+      });
+
+      // Llamar a las funciones
+      contador();
+      
+      const mostrarPeliculasPorActor = (peliculas, nombreActor) => {
+        const peliculasPorActor = peliculas.filter(movie => {
+            return movie.actors && movie.actors.includes(nombreActor);
+        });
+    
+        const listaPelis = document.getElementById("actorMoviesList"); // Asegúrate que este ID sea correcto
+        listaPelis.innerHTML = ""; // Limpiar la lista antes de mostrar resultados
+    
+        if (peliculasPorActor.length > 0) {
+            peliculasPorActor.forEach(movie => {
+                const listItem = document.createElement("li");
+                listItem.textContent = movie.title; // Mostrar solo el título
+                listaPelis.appendChild(listItem);
+            });
+        } else {
+            const listItem = document.createElement("li");
+            listItem.textContent = "No se encontraron películas para este actor.";
+            listaPelis.appendChild(listItem);
+        }
+    };
+    
+    // Manejar el evento de búsqueda
+    document.getElementById("searchButton").addEventListener("click", async () => {
+        const movies = await lista(); // Cargar películas
+        const nombreActor = document.getElementById("actorInput").value; // Obtener el nombre del actor
+    
+        mostrarPeliculasPorActor(movies, nombreActor); // Mostrar películas del actor
+    });
+
+
+    const calcularMediaPuntuaciones = (ratings) => {
+        if (!ratings || ratings.length === 0) return 0;
+        const suma = ratings.reduce((acc, rating) => acc + rating, 0);
+        return suma / ratings.length;
+    };
+    
+    // Función para mostrar las tres mejores películas
+    const mostrarTopPeliculas = (peliculas, fechaInicio, fechaFin) => {
+        const peliculasFiltradas = peliculas.filter(movie => {
+            const fechaLanzamiento = new Date(movie.releaseDate);
+            return fechaLanzamiento >= new Date(fechaInicio) && fechaLanzamiento <= new Date(fechaFin);
+        });
+    
+        // Calcular media de puntuaciones y añadirla al objeto de película
+        const peliculasConMedia = peliculasFiltradas.map(movie => {
+            return {
+                title: movie.title,
+                posterurl: movie.posterurl,
+                mediaRating: calcularMediaPuntuaciones(movie.ratings),
+            };
+        });
+    
+        // Ordenar películas por media de puntuaciones (de mayor a menor)
+        peliculasConMedia.sort((a, b) => b.mediaRating - a.mediaRating);
+    
+        // Obtener las tres mejores películas
+        const topPeliculas = peliculasConMedia.slice(0, 3);
+    
+        const listaPelis = document.getElementById("topMoviesList");
+        listaPelis.innerHTML = ""; // Limpiar la lista antes de mostrar resultados
+    
+        topPeliculas.forEach(movie => {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<strong>${movie.title}</strong><br><img src="${movie.posterurl}" alt="${movie.title} poster" style="width:100px;">`;
+            listaPelis.appendChild(listItem);
+        });
+    
+        if (topPeliculas.length === 0) {
+            const listItem = document.createElement("li");
+            listItem.textContent = "No se encontraron películas en este rango de fechas.";
+            listaPelis.appendChild(listItem);
+        }
+    };
+    
+    // Manejar el evento de búsqueda
+    document.getElementById("searchMoviesButton").addEventListener("click", async () => {
+        const movies = await lista(); 
+        const fechaInicio = document.getElementById("startDate").value; 
+        const fechaFin = document.getElementById("endDate").value;
+    
+        mostrarTopPeliculas(movies, fechaInicio, fechaFin);
+    });
+    </script>
+  </body>
+</html>
